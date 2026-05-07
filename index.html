@@ -119,6 +119,8 @@ function fibonacciSphere(n) {
 }
 
 const basePositions = fibonacciSphere(N); // unit sphere
+// Mutable positions for attraction animation (deep copy of basePositions)
+const currentPos = basePositions.map(p => [p[0], p[1], p[2]]);
 
 // Load images
 const imgs = {};
@@ -288,7 +290,7 @@ function getProjected() {
 
 // Better project: simple orthographic-ish with mild perspective
 function getNodes() {
-  return basePositions.map(([bx,by,bz], idx) => {
+  return currentPos.map(([bx,by,bz], idx) => {
     const id = idx + 1;
     const [rx, ry, rz] = rotate3D(bx, by, bz);
     const fov = 1.8;
@@ -343,6 +345,42 @@ function draw(ts) {
 
   if (!dragging) rotY += AUTO_SPEED;
 
+  // ── Attraction physics ──
+  if (activeNode !== null) {
+    const conn = ADJACENCY[activeNode];
+    const cluster = new Set([activeNode, ...conn]);
+    // centroid of cluster's current positions
+    let cx = 0, cy = 0, cz = 0;
+    for (const id of cluster) {
+      const p = currentPos[id - 1];
+      cx += p[0]; cy += p[1]; cz += p[2];
+    }
+    const n = cluster.size;
+    cx /= n; cy /= n; cz /= n;
+    for (let i = 0; i < N; i++) {
+      const id = i + 1;
+      const p = currentPos[i];
+      const base = basePositions[i];
+      if (cluster.has(id)) {
+        p[0] += (cx - p[0]) * 0.08;
+        p[1] += (cy - p[1]) * 0.08;
+        p[2] += (cz - p[2]) * 0.08;
+      } else {
+        p[0] += (base[0] - p[0]) * 0.05;
+        p[1] += (base[1] - p[1]) * 0.05;
+        p[2] += (base[2] - p[2]) * 0.05;
+      }
+    }
+  } else {
+    for (let i = 0; i < N; i++) {
+      const p = currentPos[i];
+      const base = basePositions[i];
+      p[0] += (base[0] - p[0]) * 0.05;
+      p[1] += (base[1] - p[1]) * 0.05;
+      p[2] += (base[2] - p[2]) * 0.05;
+    }
+  }
+
   ctx.clearRect(0, 0, W, H);
 
   const nodes = getNodes();
@@ -363,7 +401,7 @@ function draw(ts) {
                        ADJACENCY[id].includes(nb);
 
       if (isActive) {
-        const col = nodeColor(activeNode === id ? id : nb);
+        const col = nodeColor(activeNode);
         ctx.save();
         ctx.strokeStyle = col;
         ctx.lineWidth = 2.0;
@@ -432,12 +470,12 @@ function draw(ts) {
     ctx.drawImage(img, dx, dy, dw, dh);
     ctx.restore();
 
-    // Node ID label
+    // Node ID label — active cluster uses activeNode's color
     let labelColor;
     if (isActive) {
       labelColor = nodeColor(n.id);
     } else if (activeNode !== null && ADJACENCY[activeNode].includes(n.id)) {
-      labelColor = nodeColor(n.id);
+      labelColor = nodeColor(activeNode);
     } else {
       labelColor = 'rgba(50,40,60,0.7)';
     }
