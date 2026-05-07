@@ -69,18 +69,7 @@ body {
   background: #9c83bc;
   cursor: pointer;
 }
-#pauseBtn {
-  background: rgba(156,131,188,0.15);
-  border: 1px solid rgba(156,131,188,0.3);
-  color: rgba(200,190,210,0.8);
-  font-family: 'Hack', monospace;
-  font-size: 0.7rem;
-  padding: 4px 12px;
-  border-radius: 3px;
-  cursor: pointer;
-  letter-spacing: 0.05em;
-}
-#pauseBtn:hover { background: rgba(156,131,188,0.25); }
+
 #info {
   position: absolute;
   top: 90px;
@@ -100,7 +89,6 @@ body {
 <canvas id="canvas"></canvas>
 <div id="controls">
   <label>zoom <input type="range" id="zoomSlider" min="0.4" max="2.5" step="0.01" value="1"></label>
-  <button id="pauseBtn">⏸ pause</button>
 </div>
 <div id="info" id="info"></div>
 
@@ -158,7 +146,6 @@ window.addEventListener('resize', resize);
 
 // Camera / rotation state
 let rotX = 0.3, rotY = 0;
-let autoRot = true;
 const AUTO_SPEED = 0.002;
 let zoom = 1.0;
 let activeNode = null;
@@ -207,10 +194,7 @@ canvas.addEventListener('click', e => {
 document.getElementById('zoomSlider').addEventListener('input', e => {
   zoom = parseFloat(e.target.value);
 });
-document.getElementById('pauseBtn').addEventListener('click', () => {
-  autoRot = !autoRot;
-  document.getElementById('pauseBtn').textContent = autoRot ? '⏸ pause' : '▶ resume';
-});
+
 
 function updateInfo() {
   const el = document.getElementById('info');
@@ -282,16 +266,30 @@ function hitTest(mx, my) {
   return null;
 }
 
-// Pulse dots state
-const pulses = []; // {nodeA, nodeB, t: 0..1, color}
-let pulseTimer = 0;
+// Pulse dots state — one dot per connection line
+// pulseMap[key] = {from, to, t: 0..1, color, speed}
+const pulseMap = {};
 
-function spawnPulses() {
-  if (activeNode === null) return;
+function syncPulses() {
+  if (activeNode === null) {
+    // Clear all pulses
+    for (const k in pulseMap) delete pulseMap[k];
+    return;
+  }
   const conn = ADJACENCY[activeNode];
   const col = nodeColor(activeNode);
+  const activeKeys = new Set();
   for (const nb of conn) {
-    pulses.push({from: activeNode, to: nb, t: 0, color: col, speed: 0.006 + Math.random()*0.004});
+    const key = activeNode < nb ? `${activeNode}-${nb}` : `${nb}-${activeNode}`;
+    activeKeys.add(key);
+    if (!pulseMap[key]) {
+      // Stagger start so they don't all begin at t=0
+      pulseMap[key] = {from: activeNode, to: nb, t: Math.random(), color: col, speed: 0.003 + Math.random()*0.002};
+    }
+  }
+  // Remove pulses for connections no longer active
+  for (const k in pulseMap) {
+    if (!activeKeys.has(k)) delete pulseMap[k];
   }
 }
 
@@ -303,7 +301,7 @@ function draw(ts) {
   animId = requestAnimationFrame(draw);
   const dt = ts - lastTime; lastTime = ts;
 
-  if (autoRot && !dragging) rotY += AUTO_SPEED;
+  if (!dragging) rotY += AUTO_SPEED;
 
   ctx.clearRect(0, 0, W, H);
 
@@ -351,20 +349,15 @@ function draw(ts) {
     }
   }
 
-  // Update and draw pulses
-  pulseTimer += dt;
-  if (pulseTimer > 400 && activeNode !== null) {
-    pulseTimer = 0;
-    spawnPulses();
-  }
-
-  for (let i = pulses.length - 1; i >= 0; i--) {
-    const p = pulses[i];
+  // Update and draw pulses (one per connection, looping)
+  syncPulses();
+  for (const key in pulseMap) {
+    const p = pulseMap[key];
     p.t += p.speed * (dt / 16);
-    if (p.t >= 1) { pulses.splice(i, 1); continue; }
+    if (p.t >= 1) p.t -= 1;  // loop
 
     const a = nodeMap[p.from], b = nodeMap[p.to];
-    if (!a || !b) { pulses.splice(i, 1); continue; }
+    if (!a || !b) continue;
 
     const px = a.x + (b.x - a.x) * p.t;
     const py = a.y + (b.y - a.y) * p.t;
@@ -373,7 +366,7 @@ function draw(ts) {
     ctx.shadowColor = p.color;
     ctx.shadowBlur = 14;
     ctx.fillStyle = p.color;
-    ctx.globalAlpha = 0.9 * (1 - Math.abs(p.t - 0.5) * 1.5);
+    ctx.globalAlpha = 0.9 * (1 - Math.abs(p.t - 0.5) * 1.8);
     ctx.beginPath();
     ctx.arc(px, py, 3 * zoom, 0, Math.PI * 2);
     ctx.fill();
@@ -387,16 +380,18 @@ function draw(ts) {
     const isz = IMG_SIZE * zoom * (0.85 + (n.z + 1) * 0.08);
     const isActive = n.id === activeNode;
 
-    ctx.save();
-    if (isActive) {
-      ctx.shadowColor = nodeColor(n.id);
-      ctx.shadowBlur = 28;
-      ctx.globalAlpha = 1.0;
-    } else {
-      ctx.globalAlpha = 0.7 + (n.z + 1) * 0.15;
-    }
+    // Correct aspect ratio (contain logic)
+    const iw = img.naturalWidth || img.width || 1;
+    const ih = img.naturalHeight || img.height || 1;
+    const scale = Math.min(isz / iw, isz / ih);
+    const dw = iw * scale;
+    const dh = ih * scale;
+    const dx = n.x - dw / 2;
+    const dy = n.y - dh / 2;
 
-    ctx.drawImage(img, n.x - isz/2, n.y - isz/2, isz, isz);
+    ctx.save();
+    ctx.globalAlpha = isActive ? 1.0 : 0.7 + (n.z + 1) * 0.15;
+    ctx.drawImage(img, dx, dy, dw, dh);
     ctx.restore();
 
     // Node ID label
@@ -404,7 +399,7 @@ function draw(ts) {
     ctx.font = `${Math.round(9 * zoom)}px Hack, monospace`;
     ctx.fillStyle = isActive ? nodeColor(n.id) : 'rgba(200,190,210,0.45)';
     ctx.textAlign = 'center';
-    ctx.fillText(n.id, n.x, n.y + isz/2 + 11 * zoom);
+    ctx.fillText(n.id, n.x, n.y + dh/2 + 11 * zoom);
     ctx.restore();
   }
 }
