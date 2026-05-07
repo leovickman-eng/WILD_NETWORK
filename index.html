@@ -72,13 +72,13 @@ body {
 
 #info {
   position: absolute;
-  top: 90px;
-  right: 24px;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
   font-family: 'Hack', monospace;
-  font-size: 0.7rem;
-  color: rgba(200,190,210,0.6);
-  max-width: 220px;
-  line-height: 1.6;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  white-space: nowrap;
   z-index: 10;
   pointer-events: none;
 }
@@ -86,7 +86,7 @@ body {
 <link href="https://fonts.googleapis.com/css2?family=Limelight&display=swap" rel="stylesheet">
 </head>
 <body>
-<div id="header">Wild Network</div>
+<div id="header">WILD NETWORK</div>
 <canvas id="canvas"></canvas>
 <div id="controls">
   <label>zoom <input type="range" id="zoomSlider" min="0.4" max="2.5" step="0.01" value="1"></label>
@@ -253,7 +253,8 @@ function updateInfo() {
   if (activeNode === null) { el.textContent = ''; return; }
   const id = activeNode;
   const conn = ADJACENCY[id];
-  el.innerHTML = `<span style="color:${nodeColor(id)};font-weight:bold">node ${id}</span><br>connections: ${conn.join(', ')}`;
+  el.style.color = nodeColor(id);
+  el.textContent = `${id} :  ${conn.join('  ')}`;
 }
 
 // 3D rotation
@@ -505,7 +506,7 @@ function draw(ts) {
     const col = nodeColor(activeNode);
     for (const key in pulseProgress) {
       const p = pulseProgress[key];
-      p.t += 0.0003;
+      p.t += 0.0007;
       if (p.t >= 1) p.t = 0;
       const a = nodeMap[p.from], b = nodeMap[p.to];
       if (!a || !b) continue;
@@ -545,15 +546,12 @@ function draw(ts) {
     ctx.drawImage(img, dx, dy, dw, dh);
     ctx.restore();
 
-    // Node ID label — node's own color, alpha follows nodeOpacity
-    const isNeighbor = activeNode !== null && ADJACENCY[activeNode].includes(n.id);
-    const baseAlpha = (isActive || isNeighbor) ? 1.0 : 0.55;
-    const labelColor = colorWithAlpha(nodeColor(n.id), baseAlpha * nodeOpacity[n.id]);
+    // Node number — own color, fades with nodeOpacity
     ctx.save();
     ctx.font = `bold ${Math.round(10 * zoom)}px Hack, monospace`;
-    ctx.fillStyle = labelColor;
+    ctx.fillStyle = colorWithAlpha(nodeColor(n.id), nodeOpacity[n.id] * 0.85);
     ctx.textAlign = 'center';
-    ctx.fillText(n.id, n.x, n.y + dh/2 + 12 * zoom);
+    ctx.fillText(n.id, n.x, n.y + dh / 2 + 12 * zoom);
     ctx.restore();
   }
 }
