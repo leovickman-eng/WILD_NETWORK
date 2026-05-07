@@ -154,8 +154,15 @@ const ctx = canvas.getContext('2d');
 let W, H;
 
 function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width        = Math.round(W * dpr);
+  canvas.height       = Math.round(H * dpr);
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  // Scale context so all drawing coords stay in CSS-pixel space
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   if (nebulaCanvas) buildNebula(W, H);
 }
 resize();
@@ -271,30 +278,7 @@ function rotate3D(x, y, z) {
 const SPHERE_R = 260;
 const IMG_SIZE = 58;
 
-function project([x, y, z]) {
-  const fov = 900;
-  const dz = z + 2.5;
-  const scale = fov / dz;
-  return [x * scale * zoom + W/2, -y * scale * zoom + H/2, z];
-}
-
-// Compute projected positions of all nodes
-function getProjected() {
-  return basePositions.map(([x,y,z], idx) => {
-    const id = idx + 1;
-    const R = SPHERE_R;
-    const [rx, ry, rz] = rotate3D(x*R/zoom, y*R/zoom, z*R/zoom);
-    // re-apply zoom in project
-    const fov = 900 * zoom;
-    const dz = rz/(zoom) + 2.5 * SPHERE_R;
-    const sc = fov / dz;
-    const px = rx * sc/zoom * zoom + W/2;
-    const py = -ry * sc/zoom * zoom + H/2;
-    return {id, x: px, y: py, z: rz, raw: [x,y,z]};
-  });
-}
-
-// Better project: simple orthographic-ish with mild perspective
+// Perspective projection (orthographic-ish)
 function getNodes() {
   return basePositions.map(([bx,by,bz], idx) => {
     const id = idx + 1;
