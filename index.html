@@ -37,6 +37,8 @@ body {
 }
 #canvas {
   display: block;
+  width: 100vw;
+  height: 100vh;
   cursor: grab;
 }
 #canvas:active { cursor: grabbing; }
@@ -154,15 +156,8 @@ const ctx = canvas.getContext('2d');
 let W, H;
 
 function resize() {
-  const dpr = window.devicePixelRatio || 1;
-  W = window.innerWidth;
-  H = window.innerHeight;
-  canvas.width        = Math.round(W * dpr);
-  canvas.height       = Math.round(H * dpr);
-  canvas.style.width  = W + 'px';
-  canvas.style.height = H + 'px';
-  // Scale context so all drawing coords stay in CSS-pixel space
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
   if (nebulaCanvas) buildNebula(W, H);
 }
 resize();
