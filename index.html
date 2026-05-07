@@ -153,6 +153,7 @@ let activeNode = null;
 // Drag state
 let dragging = false;
 let lastX = 0, lastY = 0;
+let touchStartX = 0, touchStartY = 0, touchDragDist = 0;
 
 canvas.addEventListener('mousedown', e => {
   dragging = true; lastX = e.clientX; lastY = e.clientY;
@@ -170,17 +171,34 @@ canvas.addEventListener('mouseleave', () => dragging = false);
 canvas.addEventListener('touchstart', e => {
   e.preventDefault();
   const t = e.touches[0];
-  dragging = true; lastX = t.clientX; lastY = t.clientY;
+  dragging = true;
+  lastX = touchStartX = t.clientX;
+  lastY = touchStartY = t.clientY;
+  touchDragDist = 0;
 }, {passive: false});
 canvas.addEventListener('touchmove', e => {
   e.preventDefault();
   if (!dragging) return;
   const t = e.touches[0];
-  rotY += (t.clientX - lastX) * 0.005;
-  rotX += (t.clientY - lastY) * 0.005;
-  lastX = t.clientX; lastY = t.clientY;
+  const dx = t.clientX - lastX;
+  const dy = t.clientY - lastY;
+  touchDragDist += Math.sqrt(dx * dx + dy * dy);
+  rotY += dx * 0.005;
+  rotX += dy * 0.005;
+  lastX = t.clientX;
+  lastY = t.clientY;
 }, {passive: false});
-canvas.addEventListener('touchend', () => dragging = false);
+canvas.addEventListener('touchend', e => {
+  dragging = false;
+  if (touchDragDist < 10) {
+    const t = e.changedTouches[0];
+    const hit = hitTest(t.clientX, t.clientY);
+    if (hit !== null) {
+      activeNode = (activeNode === hit) ? null : hit;
+      updateInfo();
+    }
+  }
+});
 
 // Click to select node
 canvas.addEventListener('click', e => {
