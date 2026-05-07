@@ -346,38 +346,47 @@ function draw(ts) {
   if (!dragging) rotY += AUTO_SPEED;
 
   // ── Attraction physics ──
+  const CLUSTER_RADIUS = 0.45;
   if (activeNode !== null) {
     const conn = ADJACENCY[activeNode];
-    const cluster = new Set([activeNode, ...conn]);
-    // centroid of cluster's current positions
-    let cx = 0, cy = 0, cz = 0;
-    for (const id of cluster) {
-      const p = currentPos[id - 1];
-      cx += p[0]; cy += p[1]; cz += p[2];
-    }
-    const n = cluster.size;
-    cx /= n; cy /= n; cz /= n;
+    const activeBase = basePositions[activeNode - 1]; // active node stays at rest
     for (let i = 0; i < N; i++) {
       const id = i + 1;
       const p = currentPos[i];
       const base = basePositions[i];
-      if (cluster.has(id)) {
-        p[0] += (cx - p[0]) * 0.08;
-        p[1] += (cy - p[1]) * 0.08;
-        p[2] += (cz - p[2]) * 0.08;
+      if (id === activeNode) {
+        // Active node doesn't move
+        p[0] += (base[0] - p[0]) * 0.1;
+        p[1] += (base[1] - p[1]) * 0.1;
+        p[2] += (base[2] - p[2]) * 0.1;
+      } else if (conn.includes(id)) {
+        // Direction from active node's rest pos to neighbor's rest pos
+        let dx = base[0] - activeBase[0];
+        let dy = base[1] - activeBase[1];
+        let dz = base[2] - activeBase[2];
+        const len = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+        dx /= len; dy /= len; dz /= len;
+        // Target = active node's rest pos + normalized direction * CLUSTER_RADIUS
+        const tx = activeBase[0] + dx * CLUSTER_RADIUS;
+        const ty = activeBase[1] + dy * CLUSTER_RADIUS;
+        const tz = activeBase[2] + dz * CLUSTER_RADIUS;
+        p[0] += (tx - p[0]) * 0.06;
+        p[1] += (ty - p[1]) * 0.06;
+        p[2] += (tz - p[2]) * 0.06;
       } else {
-        p[0] += (base[0] - p[0]) * 0.05;
-        p[1] += (base[1] - p[1]) * 0.05;
-        p[2] += (base[2] - p[2]) * 0.05;
+        // Non-neighbors return to rest
+        p[0] += (base[0] - p[0]) * 0.04;
+        p[1] += (base[1] - p[1]) * 0.04;
+        p[2] += (base[2] - p[2]) * 0.04;
       }
     }
   } else {
     for (let i = 0; i < N; i++) {
       const p = currentPos[i];
       const base = basePositions[i];
-      p[0] += (base[0] - p[0]) * 0.05;
-      p[1] += (base[1] - p[1]) * 0.05;
-      p[2] += (base[2] - p[2]) * 0.05;
+      p[0] += (base[0] - p[0]) * 0.04;
+      p[1] += (base[1] - p[1]) * 0.04;
+      p[2] += (base[2] - p[2]) * 0.04;
     }
   }
 
