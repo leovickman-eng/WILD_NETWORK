@@ -129,6 +129,9 @@ let overlayAlpha = 0.0;   // dark vignette
 // Camera animation toward active node
 let targetRotX = 0.3, targetRotY = 0.0;
 
+// Nebula offscreen canvas (declared early so resize() can reference it)
+let nebulaCanvas = null;
+
 // Load images
 const imgs = {};
 let loadedCount = 0;
@@ -373,8 +376,7 @@ function genStars() {
 }
 const STARS = genStars();
 
-// ── Nebula offscreen canvas ───────────────────────────────────────────────────
-let nebulaCanvas = null;
+// ── Nebula offscreen canvas ─────────────────────────────────────────────────
 function buildNebula(w, h) {
   nebulaCanvas = document.createElement('canvas');
   nebulaCanvas.width = w; nebulaCanvas.height = h;
