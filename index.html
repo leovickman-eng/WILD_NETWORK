@@ -241,17 +241,14 @@ canvas.addEventListener('touchmove', e => {
 canvas.addEventListener('touchend', e => {
   if (e.touches.length < 2) pinchActive = false;
   dragging = e.touches.length > 0 && !pinchActive;
-  if (e.touches.length === 0 && touchDragDist < 10) {
+  if (e.touches.length === 0) {
     const t = e.changedTouches[0];
-    const hit = hitTest(t.clientX, t.clientY);
-    if (hit !== null) setActiveNode(activeNode === hit ? null : hit);
+    const dist = Math.hypot(t.clientX - touchStartX, t.clientY - touchStartY);
+    if (dist < 12) {
+      const hit = hitTest(t.clientX, t.clientY);
+      if (hit !== null) setActiveNode(activeNode === hit ? null : hit);
+    }
   }
-});
-
-// Click to select node
-canvas.addEventListener('click', e => {
-  const hit = hitTest(e.clientX, e.clientY);
-  if (hit !== null) setActiveNode(activeNode === hit ? null : hit);
 });
 
 document.getElementById('zoomSlider').addEventListener('input', e => {
@@ -295,16 +292,20 @@ function getNodes() {
   });
 }
 
-// Hit test
+// Hit test — nearest node within max(visual radius, 44px)
 function hitTest(mx, my) {
   const nodes = getNodes();
-  // Check back to front (reversed so front nodes win)
-  const sorted = [...nodes].sort((a,b) => b.z - a.z);
-  for (const n of sorted) {
-    const half = IMG_SIZE * zoom * 0.5;
-    if (Math.abs(mx - n.x) < half && Math.abs(my - n.y) < half) return n.id;
+  const MIN_HIT = 44;
+  let best = null, bestDist = Infinity;
+  for (const n of nodes) {
+    const radius = Math.max(IMG_SIZE * zoom * 0.5, MIN_HIT);
+    const d = Math.hypot(mx - n.x, my - n.y);
+    if (d < radius && d < bestDist) {
+      bestDist = d;
+      best = n.id;
+    }
   }
-  return null;
+  return best;
 }
 
 // Pulse dots — 3 balls per active edge, fixed offsets, speed 0.0003/frame
