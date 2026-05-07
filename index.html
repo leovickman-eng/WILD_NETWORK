@@ -134,8 +134,10 @@ let targetRotX = 0.0, targetRotY = 0.0;
 // Nebula offscreen canvas (declared early so resize() can reference it)
 let nebulaCanvas = null;
 
-// Load images
-const imgs = {};
+// Load images — bake into offscreen canvas to normalize EXIF orientation
+// (Chrome ignores EXIF on canvas drawImage; Safari applies it to <img>.
+//  Drawing img→offscreen canvas forces consistent pixel layout in both.)
+const imgs = {};   // offscreen canvases, keyed by node id
 let loadedCount = 0;
 const totalImgs = N;
 
@@ -145,9 +147,16 @@ function startWhenReady() {
 
 for (let i = 1; i <= N; i++) {
   const img = new Image();
-  img.onload = () => { loadedCount++; startWhenReady(); };
+  img.onload = () => {
+    const oc = document.createElement('canvas');
+    oc.width  = img.naturalWidth;
+    oc.height = img.naturalHeight;
+    oc.getContext('2d').drawImage(img, 0, 0);
+    imgs[i] = oc;          // store offscreen canvas, not the img element
+    loadedCount++;
+    startWhenReady();
+  };
   img.src = IMAGES_B64[i];
-  imgs[i] = img;
 }
 
 // Canvas setup
@@ -511,9 +520,9 @@ function draw(ts) {
     const isz = IMG_SIZE * zoom * (0.85 + (n.z + 1) * 0.08) * activeSizeScale[n.id];
     const isActive = n.id === activeNode;
 
-    // Correct aspect ratio (contain logic)
-    const iw = img.naturalWidth || img.width || 1;
-    const ih = img.naturalHeight || img.height || 1;
+    // Correct aspect ratio (contain logic) — img is an offscreen canvas
+    const iw = img.width  || 1;
+    const ih = img.height || 1;
     const scale = Math.min(isz / iw, isz / ih);
     const dw = iw * scale;
     const dh = ih * scale;
