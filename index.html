@@ -37,8 +37,6 @@ body {
 }
 #canvas {
   display: block;
-  width: 100vw;
-  height: 100vh;
   cursor: grab;
 }
 #canvas:active { cursor: grabbing; }
@@ -129,15 +127,13 @@ let connOpacity  = 1.0;   // non-active connections
 let overlayAlpha = 0.0;   // dark vignette
 
 // Camera animation toward active node
-let targetRotX = 0.0, targetRotY = 0.0;
+let targetRotX = 0.3, targetRotY = 0.0;
 
 // Nebula offscreen canvas (declared early so resize() can reference it)
 let nebulaCanvas = null;
 
-// Load images — bake into offscreen canvas to normalize EXIF orientation
-// (Chrome ignores EXIF on canvas drawImage; Safari applies it to <img>.
-//  Drawing img→offscreen canvas forces consistent pixel layout in both.)
-const imgs = {};   // offscreen canvases, keyed by node id
+// Load images
+const imgs = {};
 let loadedCount = 0;
 const totalImgs = N;
 
@@ -147,16 +143,9 @@ function startWhenReady() {
 
 for (let i = 1; i <= N; i++) {
   const img = new Image();
-  img.onload = () => {
-    const oc = document.createElement('canvas');
-    oc.width  = img.naturalWidth;
-    oc.height = img.naturalHeight;
-    oc.getContext('2d').drawImage(img, 0, 0);
-    imgs[i] = oc;          // store offscreen canvas, not the img element
-    loadedCount++;
-    startWhenReady();
-  };
+  img.onload = () => { loadedCount++; startWhenReady(); };
   img.src = IMAGES_B64[i];
+  imgs[i] = img;
 }
 
 // Canvas setup
@@ -165,7 +154,7 @@ const ctx = canvas.getContext('2d');
 let W, H;
 
 function resize() {
-  W = canvas.width  = window.innerWidth;
+  W = canvas.width = window.innerWidth;
   H = canvas.height = window.innerHeight;
   if (nebulaCanvas) buildNebula(W, H);
 }
@@ -173,7 +162,7 @@ resize();
 window.addEventListener('resize', resize);
 
 // Camera / rotation state
-let rotX = 0.0, rotY = 0.0;
+let rotX = 0.3, rotY = 0;
 const AUTO_SPEED = 0.002;
 let zoom = 1.0;
 let activeNode = null;
@@ -241,14 +230,17 @@ canvas.addEventListener('touchmove', e => {
 canvas.addEventListener('touchend', e => {
   if (e.touches.length < 2) pinchActive = false;
   dragging = e.touches.length > 0 && !pinchActive;
-  if (e.touches.length === 0) {
+  if (e.touches.length === 0 && touchDragDist < 10) {
     const t = e.changedTouches[0];
-    const dist = Math.hypot(t.clientX - touchStartX, t.clientY - touchStartY);
-    if (dist < 12) {
-      const hit = hitTest(t.clientX, t.clientY);
-      if (hit !== null) setActiveNode(activeNode === hit ? null : hit);
-    }
+    const hit = hitTest(t.clientX, t.clientY);
+    if (hit !== null) setActiveNode(activeNode === hit ? null : hit);
   }
+});
+
+// Click to select node
+canvas.addEventListener('click', e => {
+  const hit = hitTest(e.clientX, e.clientY);
+  if (hit !== null) setActiveNode(activeNode === hit ? null : hit);
 });
 
 document.getElementById('zoomSlider').addEventListener('input', e => {
@@ -279,7 +271,30 @@ function rotate3D(x, y, z) {
 const SPHERE_R = 260;
 const IMG_SIZE = 58;
 
-// Perspective projection (orthographic-ish)
+function project([x, y, z]) {
+  const fov = 900;
+  const dz = z + 2.5;
+  const scale = fov / dz;
+  return [x * scale * zoom + W/2, -y * scale * zoom + H/2, z];
+}
+
+// Compute projected positions of all nodes
+function getProjected() {
+  return basePositions.map(([x,y,z], idx) => {
+    const id = idx + 1;
+    const R = SPHERE_R;
+    const [rx, ry, rz] = rotate3D(x*R/zoom, y*R/zoom, z*R/zoom);
+    // re-apply zoom in project
+    const fov = 900 * zoom;
+    const dz = rz/(zoom) + 2.5 * SPHERE_R;
+    const sc = fov / dz;
+    const px = rx * sc/zoom * zoom + W/2;
+    const py = -ry * sc/zoom * zoom + H/2;
+    return {id, x: px, y: py, z: rz, raw: [x,y,z]};
+  });
+}
+
+// Better project: simple orthographic-ish with mild perspective
 function getNodes() {
   return basePositions.map(([bx,by,bz], idx) => {
     const id = idx + 1;
@@ -292,20 +307,16 @@ function getNodes() {
   });
 }
 
-// Hit test — nearest node within max(visual radius, 44px)
+// Hit test
 function hitTest(mx, my) {
   const nodes = getNodes();
-  const MIN_HIT = 44;
-  let best = null, bestDist = Infinity;
-  for (const n of nodes) {
-    const radius = Math.max(IMG_SIZE * zoom * 0.5, MIN_HIT);
-    const d = Math.hypot(mx - n.x, my - n.y);
-    if (d < radius && d < bestDist) {
-      bestDist = d;
-      best = n.id;
-    }
+  // Check back to front (reversed so front nodes win)
+  const sorted = [...nodes].sort((a,b) => b.z - a.z);
+  for (const n of sorted) {
+    const half = IMG_SIZE * zoom * 0.5;
+    if (Math.abs(mx - n.x) < half && Math.abs(my - n.y) < half) return n.id;
   }
-  return best;
+  return null;
 }
 
 // Pulse dots — 3 balls per active edge, fixed offsets, speed 0.0003/frame
@@ -521,9 +532,9 @@ function draw(ts) {
     const isz = IMG_SIZE * zoom * (0.85 + (n.z + 1) * 0.08) * activeSizeScale[n.id];
     const isActive = n.id === activeNode;
 
-    // Correct aspect ratio (contain logic) — img is an offscreen canvas
-    const iw = img.width  || 1;
-    const ih = img.height || 1;
+    // Correct aspect ratio (contain logic)
+    const iw = img.naturalWidth || img.width || 1;
+    const ih = img.naturalHeight || img.height || 1;
     const scale = Math.min(isz / iw, isz / ih);
     const dw = iw * scale;
     const dh = ih * scale;
