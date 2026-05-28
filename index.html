@@ -376,7 +376,7 @@ function updateInfo() {
   const conn = ADJACENCY[id];
   const col  = nodeColor(id);
 
-  document.getElementById('pImg').src      = `https://res.cloudinary.com/dk3ftfygx/image/upload/infinitypuzzles/karaktarer/karaktar_${id}.png`;
+  document.getElementById('pImg').src      = imgs[id].src;
   document.getElementById('pName').textContent  = ch.name;
   document.getElementById('pName').style.color  = col;
   document.getElementById('pAnimal').textContent = ch.animal;
