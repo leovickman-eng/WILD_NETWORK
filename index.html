@@ -149,6 +149,22 @@ body {
   font-size: 10px; opacity: 0.35;
   font-family: 'Hack', monospace; letter-spacing: 1px;
 }
+#charPanel .p-desc {
+  font-size: 13px; line-height: 1.7;
+  opacity: 0.72; margin-bottom: 16px;
+}
+#charPanel .p-chapter {
+  display: none; width: 100%;
+  padding: 9px 0; border-radius: 9px;
+  background: rgba(174,132,234,0.1);
+  border: 1px solid rgba(174,132,234,0.4);
+  color: #ae84ea; font-size: 12px;
+  cursor: pointer; text-align: center;
+  transition: background 0.2s;
+  margin-bottom: 12px; text-decoration: none;
+}
+#charPanel .p-chapter.visible { display: block; }
+#charPanel .p-chapter:hover { background: rgba(174,132,234,0.2); }
 
 /* Mobile: panel slides up from bottom */
 @media (max-width: 600px) {
@@ -178,7 +194,9 @@ body {
   <div id="pName" class="p-name"></div>
   <div id="pAnimal" class="p-animal"></div>
   <div id="pQuote" class="p-quote"></div>
+  <div id="pDesc" class="p-desc"></div>
   <button id="pAudio" class="p-audio">▶ &nbsp;Lyssna</button>
+  <a id="pChapter" class="p-chapter" target="_top">📖 &nbsp;Läs kapitel 1</a>
   <div id="pNeighbors" class="p-neighbors"></div>
 </div>
 
@@ -194,25 +212,25 @@ const NODE_COLORS = {
 };
 
 const CHARACTERS = {
-  1:  { name: 'Dolores',       animal: 'Narval',      quote: '“Vi rör oss nu. Inga frågor.”',                                              audio: null },
-  2:  { name: 'Zuki',          animal: 'Rådjur',       quote: '“Men varför får jag vara med egentligen? Inte att jag klagar bara.”',      audio: null },
-  3:  { name: 'Mani',          animal: 'Tukan',        quote: '“Det här är rätt. Det vet jag.”',                                         audio: null },
-  4:  { name: 'Ziggy-Lou',     animal: 'Räv',          quote: '“Nej nej, berätta mer. Det här är verkligen intressant.”',             audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967173/Ziggue_Lou_01_zvkgdw.mp3' },
-  5:  { name: 'Lana Manana',   animal: 'Lama',         quote: '“How fascinating. Truly.”',                                                               audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967172/Lana_01_xn4st0.mp3' },
-  6:  { name: 'Tarah',         animal: 'Tiger',        quote: '“Jag vet vart jag ska.”',                                                                 audio: null },
-  7:  { name: 'Mambo Viento',  animal: 'Drake',        quote: '“Det har redan hänt. Du vet bara inte om det än.”',                             audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967176/Mamo_viento_01_chcngh.mp3' },
-  8:  { name: 'Salvador',      animal: 'Okänt',        quote: '“Titta inte på tavlan. Titta på vad tavlan tittar på.”',              audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967173/Salvador_01_mgx68f.mp3' },
-  9:  { name: 'Pinto',         animal: 'Leopard',      quote: '“Sätt dig. Vi har tid.”',                                                            audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967171/Pinto_01_jx1xyz.mp3' },
-  10: { name: 'Sixten',        animal: 'Katt',         quote: '“Vet du vem du borde träffa? Vänta, jag har någon perfekt—”',         audio: null },
-  11: { name: 'Coco',          animal: 'Okänt',        quote: '“Ingenting att rapportera. Allt är som vanligt.”',                               audio: null },
-  12: { name: 'Mona Moon',     animal: 'Ko',           quote: '“Mmm.”',                                                                                  audio: null },
-  13: { name: 'Borro',         animal: 'Noshorning',   quote: '“Jag ljuger aldrig. Det vet du ju.”',                                                     audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967171/Borro_01_qhfkbi.mp3' },
-  14: { name: 'Pepe',          animal: 'Pingvin',      quote: '“Nej men jag undrar bara… har du pratat med Borro om det där?”',                 audio: null },
-  15: { name: 'Ronda',         animal: 'Krokodil',     quote: '“Det där är fel. Och det ska jag berätta varför.”',                   audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967172/Ronda_01_jzed46.mp3' },
-  16: { name: 'Rumi',          animal: 'Papegoja',     quote: '“Det är en bra fråga.”',                                                        audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967174/Rumi_01_tcwd2u.mp3' },
-  17: { name: 'Daffy Giraffy', animal: 'Giraff',       quote: '“Mmm. Ja. Det löser sig.”',                                                          audio: null },
-  18: { name: 'Jerry',         animal: 'Hund',         quote: '“Hittade nåt här borta. Vet inte vad det är. Men det luktar viktigt.”',    audio: null },
-  19: { name: 'Silvana',       animal: 'Kamel',        quote: '“Jag har sett öknen blomma. Du har ingen aning om vad som är möjligt.”',   audio: null },
+  1:  { name: 'Dolores',       animal: 'Narval',      quote: '“Vi rör oss nu. Inga frågor.”',                    desc: 'Rör sig utan förklaring. Har alltid vetat vart hon ska — frågan är om du håller tempot.',                                                                                       audio: null, chapterLink: null },
+  2:  { name: 'Zuki',          animal: 'Rådjur',       quote: '“Men varför får jag vara med egentligen? Inte att jag klagar bara.”', desc: 'Tvivlar på sin plats men är den första alla söker upp. Hennes närvaro är ett faktum världen anpassar sig efter.',                                                              audio: null, chapterLink: null },
+  3:  { name: 'Mani',          animal: 'Tukan',        quote: '“Det här är rätt. Det vet jag.”',           desc: 'Litar på sin intuition mer än på bevis. Har fel ibland. Ändrar sig aldrig utan att tänka noga.',                                                                                    audio: null, chapterLink: null },
+  4:  { name: 'Ziggy-Lou',     animal: 'Räv',          quote: '“Nej nej, berätta mer. Det här är verkligen intressant.”', desc: 'Lyssnar djupare än de flesta pratar. Vad hon gör med det hon hör — det vet bara hon.',                                                                                              audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967173/Ziggue_Lou_01_zvkgdw.mp3', chapterLink: null },
+  5:  { name: 'Lana Manana',   animal: 'Lama',         quote: '“How fascinating. Truly.”',                               desc: 'Observerar allting med lugn nyfikenhet. Hon är aldrig brådskande — världen kan vänta medan hon tittar.',                                                                           audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967172/Lana_01_xn4st0.mp3', chapterLink: null },
+  6:  { name: 'Tarah',         animal: 'Tiger',        quote: '“Jag vet vart jag ska.”',                                 desc: 'Rör sig alltid med avsikt. Inte aggressiv — fokuserad. Hennes riktning är ett beslut som redan är fattat.',                                                                           audio: null, chapterLink: null },
+  7:  { name: 'Mambo Viento',  animal: 'Drake',        quote: '“Det har redan hänt. Du vet bara inte om det än.”', desc: 'Lever i en annan tidslinje än de flesta. Vad han ser som minne är för andra ännu en möjlighet.',                                                                                audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967176/Mamo_viento_01_chcngh.mp3', chapterLink: null },
+  8:  { name: 'Salvador',      animal: 'Okänt',        quote: '“Titta inte på tavlan. Titta på vad tavlan tittar på.”', desc: 'Ser lager under lager. Vad han skapar är aldrig det uppenbara — det är frågan som gömmer sig bakom svaret.',                                                                          audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967173/Salvador_01_mgx68f.mp3', chapterLink: null },
+  9:  { name: 'Pinto',         animal: 'Leopard',      quote: '“Sätt dig. Vi har tid.”',                            desc: 'Tider och avstånd förhandlar med honom, inte tvärtom. Ingen känner sig stressad i hans närvaro.',                                                                                  audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967171/Pinto_01_jx1xyz.mp3', chapterLink: null },
+  10: { name: 'Sixten',        animal: 'Katt',         quote: '“Vet du vem du borde träffa? Vänta, jag har någon perfekt—”', desc: 'Känner alla i Vildmarken. Han kopplar ihop världar utan att märka det — men vem kopplar ihop honom?',                                                                             audio: null, chapterLink: 'https://infinitypuzzles.se/en/book/chapter-1' },
+  11: { name: 'Coco',          animal: 'Okänt',        quote: '“Ingenting att rapportera. Allt är som vanligt.”', desc: 'Rapporterar alltid att allt är normalt. Det stämmer aldrig riktigt — men det är just det som är normalt för Coco.',                                                                 audio: null, chapterLink: null },
+  12: { name: 'Mona Moon',     animal: 'Ko',           quote: '“Mmm.”',                                                  desc: 'Hennes tystnad väger mer än de flesta meningars ord. Folk lämnar hennes sällskap och vet saker de inte visste att de visste.',                                                          audio: null, chapterLink: null },
+  13: { name: 'Borro',         animal: 'Noshorning',   quote: '“Jag ljuger aldrig. Det vet du ju.”',                     desc: 'Kronologiskt ofelbar. Bokstavligen. Ingen i Vildmarken har någonsin fått honom att ljuga — men sanningen kan formas.',                                                                     audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967171/Borro_01_qhfkbi.mp3', chapterLink: null },
+  14: { name: 'Pepe',          animal: 'Pingvin',      quote: '“Nej men jag undrar bara… har du pratat med Borro om det där?”', desc: 'Ställer frågor som råkar vara exakt rätt. Han vet inte alltid varför han frågar — men svaren visar sig alltid vara viktiga.',                                                audio: null, chapterLink: null },
+  15: { name: 'Ronda',         animal: 'Krokodil',     quote: '“Det där är fel. Och det ska jag berätta varför.”', desc: 'Har en gåva för att hitta det enda felaktiga i ett annars perfekt resonemang. Hennes kritik är en present, om du klarar av att ta emot den.',                                            audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967172/Ronda_01_jzed46.mp3', chapterLink: null },
+  16: { name: 'Rumi',          animal: 'Papegoja',     quote: '“Det är en bra fråga.”',                        desc: 'Sitter i sitt träd och ser allt. Hennes perspektiv sträcker sig bakåt och framåt på ett sätt som gör att nuet känns bredare.',                                             audio: 'https://res.cloudinary.com/dk3ftfygx/video/upload/q_auto/f_auto/v1779967174/Rumi_01_tcwd2u.mp3', chapterLink: 'https://infinitypuzzles.se/en/book/chapter-1' },
+  17: { name: 'Daffy Giraffy', animal: 'Giraff',       quote: '“Mmm. Ja. Det löser sig.”',                          desc: 'Ser längre än de flesta — bokstavligen och bildligt. Hans lugn är inte passivitet, det är förtroende för tid.',                                                                    audio: null, chapterLink: null },
+  18: { name: 'Jerry',         animal: 'Hund',         quote: '“Hittade nåt här borta. Vet inte vad det är. Men det luktar viktigt.”', desc: 'Följer instinkter som inte har namn. Hans fynd verkar slumpmässiga tills mönstret plötsligt är uppenbarat.',                                                                     audio: null, chapterLink: null },
+  19: { name: 'Silvana',       animal: 'Kamel',        quote: '“Jag har sett öknen blomma. Du har ingen aning om vad som är möjligt.”', desc: 'Har överlevt det omöjliga och kommit ut på andra sidan med en vild tilltro till det som ännu inte hänt.',                                                                           audio: null, chapterLink: null },
 };
 
 const N = 19;
@@ -381,9 +399,18 @@ function updateInfo() {
   document.getElementById('pName').textContent  = ch.name;
   document.getElementById('pName').style.color  = col;
   document.getElementById('pAnimal').textContent = ch.animal;
+  document.getElementById('pDesc').textContent   = ch.desc || '';
   document.getElementById('pQuote').textContent  = ch.quote;
   document.getElementById('pQuote').style.borderColor = col;
   document.getElementById('pNeighbors').textContent   = 'grannar: ' + conn.join('  \u00b7  ');
+  const chapEl = document.getElementById('pChapter');
+  if (ch.chapterLink) {
+    chapEl.href = ch.chapterLink;
+    chapEl.classList.add('visible');
+  } else {
+    chapEl.classList.remove('visible');
+    chapEl.href = '#';
+  }
 
   const btn = document.getElementById('pAudio');
   btn.style.borderColor = col;
