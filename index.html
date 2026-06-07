@@ -196,7 +196,7 @@ body {
   <div id="pQuote" class="p-quote"></div>
   <div id="pDesc" class="p-desc"></div>
   <button id="pAudio" class="p-audio">▶ &nbsp;Lyssna</button>
-  <a id="pChapter" class="p-chapter" target="_top">📖 &nbsp;Läs kapitel 1</a>
+  <button id="pChapter" class="p-chapter" onclick="var u=this.dataset.href;if(u){try{window.top.location.href=u;}catch(e){window.open(u,'_blank');}}">📖 &nbsp;Läs kapitel 1</button>
   <div id="pNeighbors" class="p-neighbors"></div>
 </div>
 
@@ -405,11 +405,11 @@ function updateInfo() {
   document.getElementById('pNeighbors').textContent   = 'grannar: ' + conn.join('  \u00b7  ');
   const chapEl = document.getElementById('pChapter');
   if (ch.chapterLink) {
-    chapEl.href = ch.chapterLink;
+    chapEl.dataset.href = ch.chapterLink;
     chapEl.classList.add('visible');
   } else {
     chapEl.classList.remove('visible');
-    chapEl.href = '#';
+    chapEl.dataset.href = '';
   }
 
   const btn = document.getElementById('pAudio');
