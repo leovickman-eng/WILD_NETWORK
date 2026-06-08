@@ -86,10 +86,10 @@ body {
 /* ── Character Panel ─────────────────────────────────────── */
 #charPanel {
   position: fixed;
-  right: -360px;
+  right: -280px;
   top: 50%;
   transform: translateY(-50%);
-  width: 300px;
+  width: 220px;
   max-height: 90vh;
   overflow-y: auto;
   background: rgba(12, 8, 18, 0.93);
@@ -104,6 +104,7 @@ body {
   box-shadow: 0 8px 40px rgba(0,0,0,0.6);
 }
 #charPanel.open { right: 18px; }
+
 #charPanel .p-close {
   position: absolute; top: 13px; right: 15px;
   background: none; border: none;
@@ -113,58 +114,29 @@ body {
   transition: color 0.15s, background 0.15s;
 }
 #charPanel .p-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
-#charPanel .p-img {
-  width: 100%; border-radius: 12px;
-  display: block; margin-bottom: 14px;
-  object-fit: cover;
-}
 #charPanel .p-name {
-  font-size: 21px; font-weight: bold;
-  letter-spacing: 0.3px; margin-bottom: 2px;
+  font-size: 22px; font-weight: bold;
+  letter-spacing: 0.3px; margin-bottom: 4px;
+  font-family: 'tumb', serif;
 }
 #charPanel .p-animal {
-  font-size: 10px; opacity: 0.45;
+  font-size: 10px; opacity: 0.4;
   text-transform: uppercase; letter-spacing: 2.5px;
   margin-bottom: 14px; font-family: 'Hack', monospace;
 }
-#charPanel .p-quote {
-  font-size: 13.5px; line-height: 1.65;
-  opacity: 0.88; font-style: italic;
-  border-left: 2.5px solid;
-  padding-left: 11px; margin-bottom: 16px;
-}
-#charPanel .p-audio {
-  display: none; width: 100%;
-  padding: 9px 0; border-radius: 9px;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.15);
-  color: #f0eaf8; font-family: 'Hack', monospace;
-  font-size: 12px; cursor: pointer;
-  transition: background 0.2s;
-  margin-bottom: 12px;
-}
-#charPanel .p-audio.visible { display: block; }
-#charPanel .p-audio:hover { background: rgba(255,255,255,0.13); }
 #charPanel .p-neighbors {
   font-size: 10px; opacity: 0.35;
   font-family: 'Hack', monospace; letter-spacing: 1px;
+  margin-bottom: 14px;
 }
-#charPanel .p-desc {
-  font-size: 13px; line-height: 1.7;
-  opacity: 0.72; margin-bottom: 16px;
+#charPanel .p-charlink {
+  display: block;
+  font-size: 11px; color: rgba(174,132,234,0.65);
+  font-family: 'Hack', monospace; letter-spacing: 1px;
+  text-decoration: none; margin-top: 6px;
+  transition: color 0.15s;
 }
-#charPanel .p-chapter {
-  display: none; width: 100%;
-  padding: 9px 0; border-radius: 9px;
-  background: rgba(174,132,234,0.1);
-  border: 1px solid rgba(174,132,234,0.4);
-  color: #ae84ea; font-size: 12px;
-  cursor: pointer; text-align: center;
-  transition: background 0.2s;
-  margin-bottom: 12px; text-decoration: none;
-}
-#charPanel .p-chapter.visible { display: block; }
-#charPanel .p-chapter:hover { background: rgba(174,132,234,0.2); }
+#charPanel .p-charlink:hover { color: #ae84ea; }
 
 /* Mobile: panel slides up from bottom */
 @media (max-width: 600px) {
@@ -190,14 +162,11 @@ body {
 
 <div id="charPanel">
   <button class="p-close" onclick="setActiveNode(null)">✕</button>
-  <img id="pImg" class="p-img" src="" alt="">
   <div id="pName" class="p-name"></div>
   <div id="pAnimal" class="p-animal"></div>
-  <div id="pQuote" class="p-quote"></div>
-  <div id="pDesc" class="p-desc"></div>
-  <button id="pAudio" class="p-audio">▶ &nbsp;Lyssna</button>
-  <button id="pChapter" class="p-chapter" onclick="var u=this.dataset.href;if(u){try{window.top.location.href=u;}catch(e){window.open(u,'_blank');}}">📖 &nbsp;Läs kapitel 1</button>
   <div id="pNeighbors" class="p-neighbors"></div>
+  <a id="pCharLink" class="p-charlink" href="https://infinity-puzzle.com/sv/characters" target="_top">→ utforska alla karakärer</a>
+</div>
 </div>
 
 
@@ -385,9 +354,6 @@ function updateInfo() {
   const panel = document.getElementById('charPanel');
   if (activeNode === null) {
     panel.classList.remove('open');
-    if (_audio) { _audio.pause(); _audio = null; }
-    const btn = document.getElementById('pAudio');
-    if (btn) btn.textContent = '\u25b6 \u00a0Lyssna';
     return;
   }
   const id   = activeNode;
@@ -395,44 +361,13 @@ function updateInfo() {
   const conn = ADJACENCY[id];
   const col  = nodeColor(id);
 
-  document.getElementById('pImg').src      = imgs[id].src;
-  document.getElementById('pName').textContent  = ch.name;
-  document.getElementById('pName').style.color  = col;
-  document.getElementById('pAnimal').textContent = ch.animal;
-  document.getElementById('pDesc').textContent   = ch.desc || '';
-  document.getElementById('pQuote').textContent  = ch.quote;
-  document.getElementById('pQuote').style.borderColor = col;
-  document.getElementById('pNeighbors').textContent   = 'grannar: ' + conn.join('  \u00b7  ');
-  const chapEl = document.getElementById('pChapter');
-  if (ch.chapterLink) {
-    chapEl.dataset.href = ch.chapterLink;
-    chapEl.classList.add('visible');
-  } else {
-    chapEl.classList.remove('visible');
-    chapEl.dataset.href = '';
-  }
-
-  const btn = document.getElementById('pAudio');
-  btn.style.borderColor = col;
-  btn.style.color       = col;
-  if (ch.audio) {
-    btn.classList.add('visible');
-    btn.textContent = '\u25b6 \u00a0Lyssna';
-    btn.onclick = () => {
-      if (_audio) {
-        _audio.pause(); _audio = null;
-        btn.textContent = '\u25b6 \u00a0Lyssna';
-      } else {
-        _audio = new Audio(ch.audio);
-        _audio.play();
-        btn.textContent = '\u23f9 \u00a0Stoppa';
-        _audio.onended = () => { _audio = null; btn.textContent = '\u25b6 \u00a0Lyssna'; };
-      }
-    };
-  } else {
-    btn.classList.remove('visible');
-    btn.onclick = null;
-  }
+  document.getElementById('pName').textContent      = ch.name;
+  document.getElementById('pName').style.color      = col;
+  document.getElementById('pAnimal').textContent    = ch.animal;
+  document.getElementById('pNeighbors').textContent = 'grannar: ' + conn.join('  \u00b7  ');
+  const charLink = document.getElementById('pCharLink');
+  charLink.href        = 'https://infinity-puzzle.com/sv/characters';
+  charLink.textContent = '→ utforska alla karaktärer';
   panel.classList.add('open');
 }
 
