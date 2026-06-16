@@ -165,7 +165,7 @@ body {
   <div id="pName" class="p-name"></div>
   <div id="pAnimal" class="p-animal"></div>
   <div id="pNeighbors" class="p-neighbors"></div>
-  <a id="pCharLink" class="p-charlink" href="https://infinity-puzzle.com/sv/characters" target="_top">→ utforska alla karakärer</a>
+  <a id="pCharLink" class="p-charlink" href="https://infinity-puzzle.com/sv/universe/stories" target="_top">→ utforska alla karakärer</a>
 </div>
 </div>
 
@@ -366,7 +366,7 @@ function updateInfo() {
   document.getElementById('pAnimal').textContent    = ch.animal;
   document.getElementById('pNeighbors').textContent = 'grannar: ' + conn.join('  \u00b7  ');
   const charLink = document.getElementById('pCharLink');
-  charLink.href        = 'https://infinity-puzzle.com/sv/characters';
+  charLink.href        = 'https://infinity-puzzle.com/sv/universe/stories';
   charLink.textContent = '→ utforska alla karaktärer';
   panel.classList.add('open');
 }
