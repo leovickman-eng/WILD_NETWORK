@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Wild Network</title>
+<link rel="stylesheet" href="https://use.typekit.net/mnz1cmc.css">
 <style>
 @font-face {
   font-family: 'Brianne';
@@ -17,7 +18,7 @@
 body {
   background: #231e22;
   color: #ccc;
-  font-family: 'Hack', monospace;
+  font-family: 'eight-condensed', 'Hack', monospace;
   overflow: hidden;
   width: 100vw;
   height: 100vh;
@@ -27,7 +28,7 @@ body {
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  font-family: 'tumb', serif;
+  font-family: 'eight-condensed', serif;
   font-size: clamp(1rem, 5vw, 2.8rem);
   color: #ae84ea;
   letter-spacing: 0.08em;
@@ -49,7 +50,7 @@ body {
   align-items: center;
   gap: 16px;
   z-index: 10;
-  font-family: 'Hack', monospace;
+  font-family: 'eight-condensed', 'Hack', monospace;
   font-size: 0.75rem;
   color: rgba(200,190,210,0.7);
 }
@@ -75,7 +76,7 @@ body {
   top: 72px;
   left: 50%;
   transform: translateX(-50%);
-  font-family: 'Hack', monospace;
+  font-family: 'eight-condensed', 'Hack', monospace;
   font-size: 11px;
   letter-spacing: 0.15em;
   white-space: nowrap;
@@ -117,22 +118,22 @@ body {
 #charPanel .p-name {
   font-size: 22px; font-weight: bold;
   letter-spacing: 0.3px; margin-bottom: 4px;
-  font-family: 'tumb', serif;
+  font-family: 'eight-condensed', serif;
 }
 #charPanel .p-animal {
   font-size: 10px; opacity: 0.4;
   text-transform: uppercase; letter-spacing: 2.5px;
-  margin-bottom: 14px; font-family: 'Hack', monospace;
+  margin-bottom: 14px; font-family: 'eight-condensed', 'Hack', monospace;
 }
 #charPanel .p-neighbors {
   font-size: 10px; opacity: 0.35;
-  font-family: 'Hack', monospace; letter-spacing: 1px;
+  font-family: 'eight-condensed', 'Hack', monospace; letter-spacing: 1px;
   margin-bottom: 14px;
 }
 #charPanel .p-charlink {
   display: block;
   font-size: 11px; color: rgba(174,132,234,0.65);
-  font-family: 'Hack', monospace; letter-spacing: 1px;
+  font-family: 'eight-condensed', 'Hack', monospace; letter-spacing: 1px;
   text-decoration: none; margin-top: 6px;
   transition: color 0.15s;
 }
@@ -262,7 +263,7 @@ resize();
 window.addEventListener('resize', resize);
 
 // Camera / rotation state
-let rotX = 0.3, rotY = 0;
+let rotX = 0, rotY = 0;
 const AUTO_SPEED = 0.002;
 let zoom = 1.0;
 let activeNode = null;
@@ -604,11 +605,13 @@ function draw(ts) {
       } else if (connOpacity > 0.001) {
         ctx.save();
         ctx.strokeStyle = `rgba(156,131,188,${(0.15 * connOpacity).toFixed(3)})`;
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([7, 5]);
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
         ctx.stroke();
+        ctx.setLineDash([]);
         ctx.restore();
       }
     }
@@ -657,12 +660,14 @@ function draw(ts) {
 
     ctx.save();
     ctx.globalAlpha = nodeOpacity[n.id];
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, dx, dy, dw, dh);
     ctx.restore();
 
     // Node number — own color, fades with nodeOpacity
     ctx.save();
-    ctx.font = `bold ${Math.round(10 * zoom)}px Hack, monospace`;
+    ctx.font = `900 ${Math.round(10 * zoom)}px eight-condensed, Hack, monospace`;
     ctx.fillStyle = colorWithAlpha(nodeColor(n.id), nodeOpacity[n.id] * 0.85);
     ctx.textAlign = 'center';
     ctx.fillText(n.id, n.x, n.y + dh / 2 + 12 * zoom);
