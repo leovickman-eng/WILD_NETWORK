@@ -384,8 +384,8 @@ function updateInfo() {
   document.getElementById('pAnimal').textContent    = ch.animal;
   document.getElementById('pNeighbors').textContent = 'grannar: ' + conn.join('  \u00b7  ');
   const charLink = document.getElementById('pCharLink');
-  charLink.href        = 'https://infinity-puzzle.com/sv/universe/stories';
-  charLink.textContent = '→ utforska alla karaktärer';
+  charLink.href        = `https://infinity-puzzle.com/sv/universe/stories/${id}`;
+  charLink.textContent = `→ läs om ${ch.name}`;
   panel.classList.add('open');
 }
 
@@ -728,7 +728,7 @@ function draw(ts) {
 
     // Node number — own color, fades with nodeOpacity
     ctx.save();
-    ctx.font = `400 ${Math.round(10 * zoom)}px 'Courier New', Menlo, monospace`;
+    ctx.font = `700 ${Math.round(11 * zoom)}px 'Courier New', Menlo, monospace`;
     ctx.fillStyle = colorWithAlpha('#f0eaf8', nodeOpacity[n.id] * 0.85);
     ctx.textAlign = 'center';
     ctx.fillText(n.id, n.x, n.y + dh / 2 + 12 * zoom);
