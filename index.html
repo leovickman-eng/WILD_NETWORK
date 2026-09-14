@@ -439,8 +439,8 @@ function hitTest(mx, my) {
 }
 
 // Pulse dots — 3 balls per active edge, fixed offsets, speed 0.0003/frame
-const PULSE_OFFSETS = [0, 0.33, 0.66];
-const PULSE_RADII = [2, 3, 4];
+const PULSE_OFFSETS = [0, 0.25, 0.5, 0.75];
+const PULSE_RADII = [1.5, 1.5, 1.5, 1.5];
 const pulseProgress = {}; // key -> {from, to, t}
 
 function syncPulses() {
@@ -596,7 +596,7 @@ function draw(ts) {
                        ADJACENCY[id].includes(nb);
 
       if (isActive) {
-        const col = nodeColor(activeNode);
+        const col = '#f0eaf8';
         ctx.save();
         ctx.strokeStyle = col;
         ctx.lineWidth = 2.0;
@@ -622,10 +622,10 @@ function draw(ts) {
   // Update and draw pulses (3 balls per edge, no glow)
   syncPulses();
   if (activeNode !== null) {
-    const col = nodeColor(activeNode);
+    const col = '#f0eaf8';
     for (const key in pulseProgress) {
       const p = pulseProgress[key];
-      p.t += 0.0007;
+      p.t += 0.001;
       if (p.t >= 1) p.t = 0;
       const a = nodeMap[p.from], b = nodeMap[p.to];
       if (!a || !b) continue;
@@ -635,7 +635,7 @@ function draw(ts) {
         const py = a.y + (b.y - a.y) * t;
         ctx.save();
         ctx.fillStyle = col;
-        ctx.globalAlpha = 0.85;
+        ctx.globalAlpha = 0.5;
         ctx.beginPath();
         ctx.arc(px, py, PULSE_RADII[i] * zoom, 0, Math.PI * 2);
         ctx.fill();
