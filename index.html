@@ -339,14 +339,26 @@ canvas.addEventListener('touchend', e => {
   if (e.touches.length === 0 && touchDragDist < 10) {
     const t = e.changedTouches[0];
     const hit = hitTest(t.clientX, t.clientY);
-    if (hit !== null) setActiveNode(activeNode === hit ? null : hit);
+    if (activeNode !== null) {
+      if (hit !== null && hit !== activeNode) setActiveNode(hit);
+      else setActiveNode(null);
+    } else {
+      if (hit !== null) setActiveNode(hit);
+    }
   }
 });
 
 // Click to select node
 canvas.addEventListener('click', e => {
   const hit = hitTest(e.clientX, e.clientY);
-  if (hit !== null) setActiveNode(activeNode === hit ? null : hit);
+  if (activeNode !== null) {
+    // Detail mode: click neighbor → switch; click active → back to globe; click empty → back to globe
+    if (hit !== null && hit !== activeNode) setActiveNode(hit);
+    else setActiveNode(null);
+  } else {
+    // Globe mode: click node → detail; click empty → nothing
+    if (hit !== null) setActiveNode(hit);
+  }
 });
 
 document.getElementById('zoomSlider').addEventListener('input', e => {
@@ -430,13 +442,16 @@ function getNodes() {
 // Hit test — uses displayPos (arranged layout) when active
 function hitTest(mx, my) {
   const nodes = getNodes();
-  // Override with arranged positions if active
   for (const n of nodes) {
     if (displayPos[n.id]) { n.x = displayPos[n.id].x; n.y = displayPos[n.id].y; }
   }
-  // Front nodes win (highest z)
+  // In detail mode: only active node + its neighbors are hittable
+  const allowed = activeNode !== null
+    ? new Set([activeNode, ...ADJACENCY[activeNode]])
+    : null;
   const sorted = [...nodes].sort((a,b) => b.z - a.z);
   for (const n of sorted) {
+    if (allowed && !allowed.has(n.id)) continue;
     const sz = IMG_SIZE * zoom * activeSizeScale[n.id] * 0.6;
     if (Math.abs(mx - n.x) < sz && Math.abs(my - n.y) < sz) return n.id;
   }
@@ -543,7 +558,7 @@ function draw(ts) {
     for (let i = 1; i <= N; i++) {
       const isCluster = i === activeNode || conn.includes(i);
       nodeOpacity[i]    += ((isCluster ? 1.0 : 0.06) - nodeOpacity[i])    * 0.05;
-      activeSizeScale[i]+= ((i === activeNode ? 1.5 : (ADJACENCY[activeNode].includes(i) ? 0.85 : 0.0)) - activeSizeScale[i]) * 0.08;
+      activeSizeScale[i]+= ((i === activeNode ? 1.8 : (ADJACENCY[activeNode].includes(i) ? 0.82 : 0.0)) - activeSizeScale[i]) * 0.08;
     }
     connOpacity  += (0.0  - connOpacity)  * 0.05;
     overlayAlpha += (0.45 - overlayAlpha) * 0.05;
@@ -713,8 +728,8 @@ function draw(ts) {
 
     // Node number — own color, fades with nodeOpacity
     ctx.save();
-    ctx.font = `900 ${Math.round(10 * zoom)}px eight-condensed, Hack, monospace`;
-    ctx.fillStyle = colorWithAlpha('#ae84ea', nodeOpacity[n.id] * 0.85);
+    ctx.font = `400 ${Math.round(10 * zoom)}px 'Courier New', Menlo, monospace`;
+    ctx.fillStyle = colorWithAlpha('#f0eaf8', nodeOpacity[n.id] * 0.85);
     ctx.textAlign = 'center';
     ctx.fillText(n.id, n.x, n.y + dh / 2 + 12 * zoom);
     ctx.restore();
