@@ -600,23 +600,24 @@ function draw(ts) {
 
   const nodes = getNodes();
 
-  // ── Arrange cluster: active node top-center, neighbors in a row below ──
+  // ── Arrange cluster: active node center, neighbors in a circle around it ──
   if (activeNode !== null) {
     const conn = ADJACENCY[activeNode];
     const count = conn.length;
-    const spacing = Math.min(130 * zoom, W * 0.82 / Math.max(count, 1));
-    const activeY  = H * 0.30;
-    const rowY     = H * 0.63;
-    const startX   = W / 2 - (count - 1) * spacing / 2;
+    const cx = W / 2;
+    const cy = H / 2;
+    const radius = Math.min(W, H) * 0.28;
     for (const n of nodes) {
       if (!displayPos[n.id]) displayPos[n.id] = { x: n.x, y: n.y };
       const dp = displayPos[n.id];
       let tx, ty;
       if (n.id === activeNode) {
-        tx = W / 2; ty = activeY;
+        tx = cx; ty = cy;
       } else if (conn.includes(n.id)) {
         const ni = conn.indexOf(n.id);
-        tx = startX + ni * spacing; ty = rowY;
+        const angle = (2 * Math.PI * ni / count) - Math.PI / 2;
+        tx = cx + Math.cos(angle) * radius;
+        ty = cy + Math.sin(angle) * radius;
       } else {
         tx = n.x; ty = n.y;
       }
