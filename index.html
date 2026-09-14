@@ -271,6 +271,7 @@ let rotX = 0, rotY = 0;
 const AUTO_SPEED = 0.002;
 let zoom = 1.0;
 let activeNode = null;
+const displayPos = {}; // 2D lerp targets for arranged layout
 
 // Drag state
 let dragging = false;
@@ -579,6 +580,45 @@ function draw(ts) {
   }
 
   const nodes = getNodes();
+
+  // ── Arrange cluster: active node top-center, neighbors in a row below ──
+  if (activeNode !== null) {
+    const conn = ADJACENCY[activeNode];
+    const count = conn.length;
+    const spacing = Math.min(130 * zoom, W * 0.82 / Math.max(count, 1));
+    const activeY  = H * 0.30;
+    const rowY     = H * 0.63;
+    const startX   = W / 2 - (count - 1) * spacing / 2;
+    for (const n of nodes) {
+      if (!displayPos[n.id]) displayPos[n.id] = { x: n.x, y: n.y };
+      const dp = displayPos[n.id];
+      let tx, ty;
+      if (n.id === activeNode) {
+        tx = W / 2; ty = activeY;
+      } else if (conn.includes(n.id)) {
+        const ni = conn.indexOf(n.id);
+        tx = startX + ni * spacing; ty = rowY;
+      } else {
+        tx = n.x; ty = n.y;
+      }
+      dp.x += (tx - dp.x) * 0.08;
+      dp.y += (ty - dp.y) * 0.08;
+      n.x = dp.x; n.y = dp.y;
+    }
+  } else {
+    // Smoothly return nodes to their 3D-projected positions
+    for (const n of nodes) {
+      if (displayPos[n.id]) {
+        const dp = displayPos[n.id];
+        const dist = Math.hypot(n.x - dp.x, n.y - dp.y);
+        dp.x += (n.x - dp.x) * 0.08;
+        dp.y += (n.y - dp.y) * 0.08;
+        n.x = dp.x; n.y = dp.y;
+        if (dist < 1.5) delete displayPos[n.id];
+      }
+    }
+  }
+
   const nodeMap = {};
   for (const n of nodes) nodeMap[n.id] = n;
 
