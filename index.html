@@ -427,14 +427,18 @@ function getNodes() {
   });
 }
 
-// Hit test
+// Hit test — uses displayPos (arranged layout) when active
 function hitTest(mx, my) {
   const nodes = getNodes();
-  // Check back to front (reversed so front nodes win)
+  // Override with arranged positions if active
+  for (const n of nodes) {
+    if (displayPos[n.id]) { n.x = displayPos[n.id].x; n.y = displayPos[n.id].y; }
+  }
+  // Front nodes win (highest z)
   const sorted = [...nodes].sort((a,b) => b.z - a.z);
   for (const n of sorted) {
-    const half = IMG_SIZE * zoom * 0.5;
-    if (Math.abs(mx - n.x) < half && Math.abs(my - n.y) < half) return n.id;
+    const sz = IMG_SIZE * zoom * activeSizeScale[n.id] * 0.6;
+    if (Math.abs(mx - n.x) < sz && Math.abs(my - n.y) < sz) return n.id;
   }
   return null;
 }
@@ -539,7 +543,7 @@ function draw(ts) {
     for (let i = 1; i <= N; i++) {
       const isCluster = i === activeNode || conn.includes(i);
       nodeOpacity[i]    += ((isCluster ? 1.0 : 0.06) - nodeOpacity[i])    * 0.05;
-      activeSizeScale[i]+= ((i === activeNode ? 1.2 : 1.0) - activeSizeScale[i]) * 0.08;
+      activeSizeScale[i]+= ((i === activeNode ? 1.5 : (ADJACENCY[activeNode].includes(i) ? 0.85 : 0.0)) - activeSizeScale[i]) * 0.08;
     }
     connOpacity  += (0.0  - connOpacity)  * 0.05;
     overlayAlpha += (0.45 - overlayAlpha) * 0.05;
@@ -710,7 +714,7 @@ function draw(ts) {
     // Node number — own color, fades with nodeOpacity
     ctx.save();
     ctx.font = `900 ${Math.round(10 * zoom)}px eight-condensed, Hack, monospace`;
-    ctx.fillStyle = colorWithAlpha(nodeColor(n.id), nodeOpacity[n.id] * 0.85);
+    ctx.fillStyle = colorWithAlpha('#ae84ea', nodeOpacity[n.id] * 0.85);
     ctx.textAlign = 'center';
     ctx.fillText(n.id, n.x, n.y + dh / 2 + 12 * zoom);
     ctx.restore();
