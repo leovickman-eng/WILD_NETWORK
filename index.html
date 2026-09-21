@@ -42,35 +42,6 @@ body {
   cursor: grab;
 }
 #canvas:active { cursor: grabbing; }
-#controls {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  z-index: 10;
-  font-family: 'Courier New', 'Menlo', 'Consolas', monospace;
-  font-size: 0.75rem;
-  color: rgba(240,234,248,0.7);
-}
-#controls label { display: flex; align-items: center; gap: 8px; }
-#zoomSlider {
-  -webkit-appearance: none;
-  width: 100px;
-  height: 2px;
-  background: rgba(156,131,188,0.3);
-  border-radius: 2px;
-  outline: none;
-}
-#zoomSlider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px; height: 12px;
-  border-radius: 50%;
-  background: #9c83bc;
-  cursor: pointer;
-}
 
 #info {
   position: absolute;
@@ -160,9 +131,6 @@ body {
 <body>
 <div id="header">WILD NETWORK</div>
 <canvas id="canvas"></canvas>
-<div id="controls">
-  <label>zoom <input type="range" id="zoomSlider" min="0.4" max="2.5" step="0.01" value="1"></label>
-</div>
 <div id="info" id="info"></div>
 
 <div id="charPanel">
@@ -343,8 +311,6 @@ canvas.addEventListener('touchmove', e => {
     const newDist = Math.sqrt(dx*dx + dy*dy);
     if (pinchDist > 0) {
       zoom = Math.min(Math.max(zoom * (newDist / pinchDist), 100/260), 420/260);
-      const sl = document.getElementById('zoomSlider');
-      if (sl) sl.value = zoom;
     }
     pinchDist = newDist;
   } else if (!pinchActive && dragging) {
@@ -386,9 +352,6 @@ canvas.addEventListener('click', e => {
   }
 });
 
-document.getElementById('zoomSlider').addEventListener('input', e => {
-  zoom = parseFloat(e.target.value);
-});
 
 
 let _audio = null;
@@ -596,10 +559,9 @@ function draw(ts) {
     overlayAlpha += (0.0 - overlayAlpha) * 0.05;
   }
 
-  // ── Background: solid fill → nebula → stars ──
+  // ── Background: solid fill → stars ──
   ctx.fillStyle = '#242028';
   ctx.fillRect(0, 0, W, H);
-  if (nebulaCanvas) ctx.drawImage(nebulaCanvas, 0, 0);
 
   // Small + medium stars (static)
   for (const s of STARS.small) {
